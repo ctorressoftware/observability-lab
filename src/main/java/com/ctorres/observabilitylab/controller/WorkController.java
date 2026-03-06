@@ -22,35 +22,35 @@ public class WorkController {
 
     @GetMapping("/sleep")
     public String sleep(@RequestParam long seconds) {
-        try {
+        return metrics.record(() -> {
             metrics.incrementRequests();
             Thread.sleep(seconds);
-            return "I slept like " + (seconds/1000) + " seconds.";
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-            throw new RuntimeException("Thread " + Thread.currentThread().getName()
-                    + " was interrupted", e);
-        }
+            return "I slept like " + (seconds / 1000) + " seconds.";
+        });
     }
 
     @GetMapping("/cpu")
     public List<String> cpu(@RequestParam int numberOfIterations) {
-        metrics.incrementRequests();
-        var iterations = new ArrayList<String>();
-        for (int i = 0; i < numberOfIterations; i++) {
-           iterations.add("Iteration " + (i + 1));
-        }
-        return iterations;
+        return metrics.record(() -> {
+            metrics.incrementRequests();
+            var iterations = new ArrayList<String>();
+            for (int i = 0; i < numberOfIterations; i++) {
+                iterations.add("Iteration " + (i + 1));
+            }
+            return iterations;
+        });
     }
 
     @GetMapping("/randomFail")
     public String randomFail(@RequestParam float failRate) {
-        metrics.incrementRequests();
-        var random = new Random();
-        float number = random.nextFloat();
-        if (number < failRate) {
-            throw new RuntimeException("It has occurred an controlled error");
-        }
-        return "success!";
+        return metrics.record(() -> {
+            metrics.incrementRequests();
+            var random = new Random();
+            float number = random.nextFloat();
+            if (number < failRate) {
+                throw new RuntimeException("It has occurred an controlled error");
+            }
+            return "success!";
+        });
     }
 }
