@@ -35,6 +35,7 @@ public class WorkController {
             metrics.incrementRequests();
             var iterations = new ArrayList<String>();
             for (int i = 0; i < numberOfIterations; i++) {
+                metrics.incrementTotalCpuIterations();
                 iterations.add("Iteration " + (i + 1));
             }
             return iterations;
