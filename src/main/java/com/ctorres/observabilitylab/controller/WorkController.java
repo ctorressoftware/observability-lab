@@ -21,22 +21,33 @@ public class WorkController {
     @GetMapping("/sleep")
     public String sleep(@RequestParam long seconds) {
         return metrics.record("sleep", () -> {
-            Thread.sleep(seconds);
-            metrics.incrementRequests("sleep", "success");
-            return "I slept like " + (seconds / 1000) + " seconds.";
+            try {
+                Thread.sleep(seconds);
+                metrics.incrementRequests("sleep", "success");
+                return "Slept time: " + (seconds / 1000) + " seconds.";
+            } catch (Exception e) {
+                metrics.incrementRequests("sleep", "failed");
+                throw e;
+            }
         });
     }
 
     @GetMapping("/cpu")
     public double cpu(@RequestParam int numberOfIterations) {
         return metrics.record("cpu", () -> {
-            double result = 0;
-            for (int i = 0; i < numberOfIterations; i++) {
-                metrics.incrementTotalCpuIterations();
-                result += Math.sqrt(i);
+            try {
+                double result = 0;
+                for (int i = 0; i < numberOfIterations; i++) {
+                    metrics.incrementTotalCpuIterations();
+                    result += Math.sqrt(i);
+                }
+                metrics.incrementRequests("cpu", "true");
+                return result;
+
+            } catch (Exception e) {
+                metrics.incrementRequests("cpu", "failed");
+                throw e;
             }
-            metrics.incrementRequests("cpu", "true");
-            return result;
         });
     }
 
@@ -47,7 +58,7 @@ public class WorkController {
             float number = random.nextFloat();
             if (number < failRate) {
                 metrics.incrementRequests("cpu", "failure");
-                throw new RuntimeException("It has occurred an controlled error");
+                throw new RuntimeException("controlled error");
             }
             metrics.incrementRequests("cpu", "success");
             return "success";
