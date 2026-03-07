@@ -60,7 +60,7 @@ public class WorkController {
                 metrics.incrementRequests("cpu", "failure");
                 throw new RuntimeException("controlled error");
             }
-            metrics.incrementRequests("cpu", "success");
+            metrics.incrementRequests("randomFail", "success");
             return "success";
         });
     }
