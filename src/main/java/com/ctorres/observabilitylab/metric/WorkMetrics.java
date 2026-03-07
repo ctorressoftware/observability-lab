@@ -1,6 +1,7 @@
 package com.ctorres.observabilitylab.metric;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.Callable;
@@ -24,13 +25,15 @@ public class WorkMetrics {
         ).increment();
     }
 
-    public <T> T record(String endpoint, Callable<T> callable) {
-        try {
-            return registry.timer("work_duration", "endpoint", endpoint)
-                    .recordCallable(callable);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public <T> T record(String endpoint, Callable<T> callable) throws Exception {
+
+        Timer timer = Timer.builder("work_duration_seconds")
+                .description("Duration of work endpoints")
+                .tag("endpoint", endpoint)
+                .publishPercentileHistogram()
+                .register(registry);
+
+        return timer.recordCallable(callable);
     }
 
     public void incrementTotalCpuIterations() {

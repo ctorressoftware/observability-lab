@@ -19,12 +19,12 @@ public class WorkController {
     }
 
     @GetMapping("/sleep")
-    public String sleep(@RequestParam long seconds) {
+    public String sleep(@RequestParam long seconds) throws Exception {
         return metrics.record("sleep", () -> {
             try {
-                Thread.sleep(seconds);
+                Thread.sleep(seconds * 1000);
                 metrics.incrementRequests("sleep", "success");
-                return "Slept time: " + (seconds / 1000) + " seconds.";
+                return "Slept time: " + seconds + " seconds.";
             } catch (Exception e) {
                 metrics.incrementRequests("sleep", "failed");
                 throw e;
@@ -33,7 +33,7 @@ public class WorkController {
     }
 
     @GetMapping("/cpu")
-    public double cpu(@RequestParam int numberOfIterations) {
+    public double cpu(@RequestParam int numberOfIterations) throws Exception {
         return metrics.record("cpu", () -> {
             try {
                 double result = 0;
@@ -41,7 +41,7 @@ public class WorkController {
                     metrics.incrementTotalCpuIterations();
                     result += Math.sqrt(i);
                 }
-                metrics.incrementRequests("cpu", "true");
+                metrics.incrementRequests("cpu", "success");
                 return result;
 
             } catch (Exception e) {
@@ -52,12 +52,12 @@ public class WorkController {
     }
 
     @GetMapping("/randomFail")
-    public String randomFail(@RequestParam float failRate) {
+    public String randomFail(@RequestParam float failRate) throws Exception {
         return metrics.record("randomFail", () -> {
             var random = new Random();
             float number = random.nextFloat();
             if (number < failRate) {
-                metrics.incrementRequests("cpu", "failure");
+                metrics.incrementRequests("randomFail", "failed");
                 throw new RuntimeException("controlled error");
             }
             metrics.incrementRequests("randomFail", "success");
