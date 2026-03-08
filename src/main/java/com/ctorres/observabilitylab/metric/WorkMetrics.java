@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class WorkMetrics {
     private final MeterRegistry registry;
-    private final AtomicInteger totalCpuIterations = new AtomicInteger(0);
+    private final AtomicInteger loggedUsers = new AtomicInteger(0);
 
     public WorkMetrics(MeterRegistry registry) {
         this.registry = registry;
-        registry.gauge("work_cpu_iterations", totalCpuIterations);
+        registry.gauge("logged_users", loggedUsers);
     }
 
     public void incrementRequests(String endpoint, String result) {
@@ -36,7 +36,11 @@ public class WorkMetrics {
         return timer.recordCallable(callable);
     }
 
-    public void incrementTotalCpuIterations() {
-        totalCpuIterations.getAndIncrement();
+    public void addLoggedUser() {
+        loggedUsers.getAndIncrement();
+    }
+
+    public void deleteLoggedUser() {
+        loggedUsers.getAndDecrement();
     }
 }

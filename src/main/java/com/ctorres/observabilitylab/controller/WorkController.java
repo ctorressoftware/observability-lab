@@ -1,21 +1,22 @@
 package com.ctorres.observabilitylab.controller;
 
+import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.metric.WorkMetrics;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.ctorres.observabilitylab.service.WorkService;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Random;
 
 @RestController
 @RequestMapping("/work")
 public class WorkController {
-
     private final WorkMetrics metrics;
+    private final WorkService service;
 
-    public WorkController(WorkMetrics metrics) {
+    public WorkController(WorkMetrics metrics, WorkService service) {
         this.metrics = metrics;
+        this.service = service;
     }
 
     @GetMapping("/sleep")
@@ -32,13 +33,19 @@ public class WorkController {
         });
     }
 
+    @PostMapping("/login")
+    public String login(@RequestBody @Validated LoginRequest request) throws Exception {
+        return metrics.record("login", () ->
+                service.login(request) ? "login succeeded" : "login failed"
+        );
+    }
+
     @GetMapping("/cpu")
     public double cpu(@RequestParam int numberOfIterations) throws Exception {
         return metrics.record("cpu", () -> {
             try {
                 double result = 0;
                 for (int i = 0; i < numberOfIterations; i++) {
-                    metrics.incrementTotalCpuIterations();
                     result += Math.sqrt(i);
                 }
                 metrics.incrementRequests("cpu", "success");
