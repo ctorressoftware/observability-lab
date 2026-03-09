@@ -1,10 +1,17 @@
 package com.ctorres.observabilitylab.service;
 
 import com.ctorres.observabilitylab.dto.LoginRequest;
+import com.ctorres.observabilitylab.dto.RegisterRequest;
+import com.ctorres.observabilitylab.helper.FutureHelper;
 import com.ctorres.observabilitylab.metric.WorkMetrics;
+import com.ctorres.observabilitylab.service.password_generator.PasswordSuggestionWorker;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class WorkService {
@@ -17,12 +24,16 @@ public class WorkService {
         this.metrics = metrics;
     }
 
-    public String sleep(long seconds) throws Exception {
-        return metrics.record("sleep", () -> {
+    public String register(RegisterRequest request) throws Exception {
+        return metrics.record("register", () -> {
+            if (request == null) throw new RuntimeException("request validation error");
+            if (request.user() == null || request.password() == null)
+                throw new RuntimeException("user and password are required");
+
             try {
-                Thread.sleep(seconds * 1000);
-                metrics.incrementRequests("sleep", "success");
-                return "Slept time: " + seconds + " seconds.";
+                boolean result = getArbitraryResult(request, 3);
+                metrics.incrementRequests("register", result ? "success" : "failed");
+                return "user registered correctly.";
             } catch (Exception e) {
                 metrics.incrementRequests("sleep", "failed");
                 throw e;
@@ -32,45 +43,59 @@ public class WorkService {
 
     public String login(LoginRequest request) throws Exception {
         return metrics.record("login", () -> {
-            if (request == null) return "validation error";
-            if (request.user() == null || request.password() == null) return "validation error";
+            if (request == null) throw new RuntimeException("request validation error");
+            if (request.user() == null || request.password() == null)
+                throw new RuntimeException("user and password are required");
 
             boolean result = getArbitraryResult(request, 2);
+            metrics.incrementRequests("login", result ? "success" : "failed");
 
             if (!result) throw new RuntimeException("login controlled error");
+            metrics.addLoggedUser();
 
             return  "login succeeded";
         });
     }
 
-    public String cpu(int numberOfIterations) throws Exception {
-        return metrics.record("cpu", () -> {
-            try {
-                double result = 0;
-                for (int i = 0; i < numberOfIterations; i++) {
-                    result += Math.sqrt(i);
-                }
-                metrics.incrementRequests("cpu", "success");
-                return "result: " + result;
+    public String logout(String username) throws Exception {
+        return metrics.record("logout", () -> {
 
-            } catch (Exception e) {
-                metrics.incrementRequests("cpu", "failed");
-                throw e;
-            }
+            if (username == null) return "username required";
+            boolean result = getArbitraryResult(username, 1);
+            metrics.incrementRequests("logout", result ? "success" : "failed");
+
+            if (!result) throw new RuntimeException("logout controlled error");
+            metrics.deleteLoggedUser();
+
+            return  "logout succeeded";
         });
     }
 
-    public String randomFail() throws Exception {
-        return metrics.record("randomFail", () -> {
-            var result = getArbitraryResult(new Object(), 2000);
+    public List<String> generatePasswordSuggestions(int size) throws Exception {
 
-            if (!result) {
-                metrics.incrementRequests("randomFail", "failed");
-                throw new RuntimeException("controlled error");
+        return metrics.record("password_suggestions", () -> {
+
+            var suggestionWorkers = new ArrayList<PasswordSuggestionWorker>(size);
+
+            for (int i = 0; i < size; i++)
+                suggestionWorkers.add(new PasswordSuggestionWorker());
+
+            try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+
+                var futures = executor.invokeAll(suggestionWorkers);
+                List<String> suggestions = futures.stream()
+                        .map(FutureHelper::getCheckedException)
+                        .toList();
+
+                boolean isGenerated = suggestions.size() == size;
+                metrics.incrementRequests("password_suggestions", isGenerated ? "success" : "failed");
+
+                return suggestions;
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
-
-            metrics.incrementRequests("randomFail", "success");
-            return "success";
         });
     }
 
