@@ -1,9 +1,12 @@
 package com.ctorres.observabilitylab.controller;
 
 import com.ctorres.observabilitylab.dto.LoginRequest;
+import com.ctorres.observabilitylab.dto.RegisterRequest;
 import com.ctorres.observabilitylab.service.WorkService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/work")
@@ -14,23 +17,23 @@ public class WorkController {
         this.service = service;
     }
 
-    @GetMapping("/sleep")
-    public String sleep(@RequestParam long seconds) throws Exception {
-        return service.sleep(seconds);
+    @PostMapping("/register")
+    public String register(@RequestBody RegisterRequest request) throws Exception {
+        return service.register(request);
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody @Validated LoginRequest request) throws Exception {
+    public String login(@RequestBody LoginRequest request) throws Exception {
         return service.login(request);
     }
 
-    @GetMapping("/cpu")
-    public String cpu(@RequestParam int numberOfIterations) throws Exception {
-        return service.cpu(numberOfIterations);
+    @PostMapping("/logout")
+    public String logout(@RequestParam String username) throws Exception {
+        return service.logout(username);
     }
 
-    @GetMapping("/randomFail")
-    public String randomFail() throws Exception {
-        return service.randomFail();
+    @GetMapping("/password/suggestions")
+    public List<String> generateSuggestions(@RequestParam int size) throws Exception {
+        return service.generatePasswordSuggestions(size);
     }
 }
