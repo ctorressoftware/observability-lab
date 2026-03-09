@@ -14,12 +14,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Service
-public class WorkService {
-
+public class AuthService {
     private final Random random;
     private final AuthMetrics metrics;
 
-    public WorkService(Random random, AuthMetrics metrics) {
+    public AuthService(Random random, AuthMetrics metrics) {
         this.random = random;
         this.metrics = metrics;
     }
@@ -71,13 +70,13 @@ public class WorkService {
         });
     }
 
-    public List<String> generatePasswordSuggestions(int size) throws Exception {
+    public List<String> generatePasswordSuggestions(int quantity) throws Exception {
 
         return metrics.record("password_suggestions", () -> {
 
-            var suggestionWorkers = new ArrayList<PasswordSuggestionWorker>(size);
+            var suggestionWorkers = new ArrayList<PasswordSuggestionWorker>(quantity);
 
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < quantity; i++)
                 suggestionWorkers.add(new PasswordSuggestionWorker());
 
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -87,7 +86,7 @@ public class WorkService {
                         .map(FutureHelper::getCheckedException)
                         .toList();
 
-                boolean isGenerated = suggestions.size() == size;
+                boolean isGenerated = suggestions.size() == quantity;
                 metrics.incrementRequests("password_suggestions", isGenerated ? "success" : "failed");
 
                 return suggestions;
