@@ -3,7 +3,6 @@ package com.ctorres.observabilitylab.controller;
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
 import com.ctorres.observabilitylab.service.WorkService;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

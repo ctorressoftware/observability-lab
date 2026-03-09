@@ -3,7 +3,7 @@ package com.ctorres.observabilitylab.service;
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
 import com.ctorres.observabilitylab.helper.FutureHelper;
-import com.ctorres.observabilitylab.metric.WorkMetrics;
+import com.ctorres.observabilitylab.metric.AuthMetrics;
 import com.ctorres.observabilitylab.service.password_generator.PasswordSuggestionWorker;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +17,9 @@ import java.util.concurrent.Executors;
 public class WorkService {
 
     private final Random random;
-    private final WorkMetrics metrics;
+    private final AuthMetrics metrics;
 
-    public WorkService(Random random, WorkMetrics metrics) {
+    public WorkService(Random random, AuthMetrics metrics) {
         this.random = random;
         this.metrics = metrics;
     }
@@ -107,5 +107,4 @@ public class WorkService {
         }
         return random.nextFloat() < 0.5;
     }
-
 }

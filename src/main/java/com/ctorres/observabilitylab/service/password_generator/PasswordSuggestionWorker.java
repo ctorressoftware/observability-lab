@@ -6,7 +6,7 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 public class PasswordSuggestionWorker implements Callable<String> {
-    private final int MAX_PASSWORD = 16;
+    private final int MAX_PASSWORD = 32;
     private final Random random = new Random();
     private final String upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final String lowerChars = "abcdefghijklmnopqrstuvwxyz";
@@ -21,7 +21,7 @@ public class PasswordSuggestionWorker implements Callable<String> {
 
         final var password = new StringBuilder(MAX_PASSWORD);
 
-        for (int i = 0; i < password.length(); i++) {
+        for (int i = 0; i < MAX_PASSWORD; i++) {
 
             if (password.isEmpty()) {
                 char first = getFirstCharacter();
