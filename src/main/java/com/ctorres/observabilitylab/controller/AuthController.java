@@ -2,17 +2,17 @@ package com.ctorres.observabilitylab.controller;
 
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
-import com.ctorres.observabilitylab.service.WorkService;
+import com.ctorres.observabilitylab.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/work")
-public class WorkController {
-    private final WorkService service;
+@RequestMapping("/auth")
+public class AuthController {
+    private final AuthService service;
 
-    public WorkController(WorkService service) {
+    public AuthController(AuthService service) {
         this.service = service;
     }
 
@@ -27,12 +27,12 @@ public class WorkController {
     }
 
     @PostMapping("/logout")
-    public String logout(@RequestParam String username) throws Exception {
+    public String logout(@RequestBody String username) throws Exception {
         return service.logout(username);
     }
 
     @GetMapping("/password/suggestions")
-    public List<String> generateSuggestions(@RequestParam int size) throws Exception {
-        return service.generatePasswordSuggestions(size);
+    public List<String> generateSuggestions(@RequestParam int quantity) throws Exception {
+        return service.generatePasswordSuggestions(quantity);
     }
 }
