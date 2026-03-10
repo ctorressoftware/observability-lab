@@ -32,6 +32,7 @@ public class AuthService {
             try {
                 boolean result = getArbitraryResult(request, 3);
                 metrics.incrementRequests("register", result ? "success" : "failed");
+                if (!result) throw new RuntimeException("register controlled error");
                 return "user registered correctly.";
             } catch (Exception e) {
                 metrics.incrementRequests("sleep", "failed");
