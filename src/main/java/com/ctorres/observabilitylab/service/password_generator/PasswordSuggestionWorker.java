@@ -1,8 +1,8 @@
 package com.ctorres.observabilitylab.service.password_generator;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
 
 public class PasswordSuggestionWorker implements Callable<String> {
@@ -12,24 +12,17 @@ public class PasswordSuggestionWorker implements Callable<String> {
     private final String lowerChars = "abcdefghijklmnopqrstuvwxyz";
     private final String numberChars = "1234567890";
     private final String specialChars = "!@#$%^&*";
-    private final List<Character> usedChars = new ArrayList<>(0);
+    private final Set<Character> usedChars = new HashSet<>(0);
 
     public PasswordSuggestionWorker() {}
 
     @Override
-    public String call() throws Exception {
+    public String call() {
 
         final var password = new StringBuilder(MAX_PASSWORD);
 
         for (int i = 0; i < MAX_PASSWORD; i++) {
-
-            if (password.isEmpty()) {
-                char first = getFirstCharacter();
-                password.append(first);
-                usedChars.add(first);
-            }
-
-            char newCharacter = getNewRandomCharacter();
+            char newCharacter = password.isEmpty() ?  getFirstCharacter() : getNewRandomCharacter();
             password.append(newCharacter);
             usedChars.add(newCharacter);
         }
@@ -45,7 +38,7 @@ public class PasswordSuggestionWorker implements Callable<String> {
     private char getNewRandomCharacter() {
         var allSupportedCharacters = upperChars + lowerChars + numberChars + specialChars;
         char randomChar = allSupportedCharacters.charAt(index(allSupportedCharacters.length()));
-        if (usedChars.contains(randomChar)) getNewRandomCharacter();
+        if (usedChars.contains(randomChar)) return getNewRandomCharacter();
         return randomChar;
     }
 
