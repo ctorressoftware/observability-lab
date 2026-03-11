@@ -25,9 +25,14 @@ public class AuthService {
 
     public String register(RegisterRequest request) throws Exception {
         return metrics.record("register", () -> {
-            if (request == null) throw new RuntimeException("request validation error");
-            if (request.user() == null || request.password() == null)
+            if (request == null) {
+                metrics.incrementRequests("register", "failed");
+                throw new RuntimeException("request validation error");
+            }
+            if (request.user() == null || request.password() == null) {
+                metrics.incrementRequests("register", "failed");
                 throw new RuntimeException("user and password are required");
+            }
 
             try {
                 boolean result = getArbitraryResult(request, 3);
@@ -35,7 +40,7 @@ public class AuthService {
                 if (!result) throw new RuntimeException("register controlled error");
                 return "user registered correctly.";
             } catch (Exception e) {
-                metrics.incrementRequests("sleep", "failed");
+                metrics.incrementRequests("register", "failed");
                 throw e;
             }
         });
@@ -43,9 +48,14 @@ public class AuthService {
 
     public String login(LoginRequest request) throws Exception {
         return metrics.record("login", () -> {
-            if (request == null) throw new RuntimeException("request validation error");
-            if (request.user() == null || request.password() == null)
+            if (request == null) {
+                metrics.incrementRequests("login", "failed");
+                throw new RuntimeException("request validation error");
+            }
+            if (request.user() == null || request.password() == null) {
+                metrics.incrementRequests("login", "failed");
                 throw new RuntimeException("user and password are required");
+            }
 
             boolean result = getArbitraryResult(request, 2);
             metrics.incrementRequests("login", result ? "success" : "failed");
@@ -60,7 +70,11 @@ public class AuthService {
     public String logout(String username) throws Exception {
         return metrics.record("logout", () -> {
 
-            if (username == null) return "username required";
+            if (username == null) {
+                metrics.incrementRequests("logout", "failed");
+                return "username required";
+            }
+
             boolean result = getArbitraryResult(username, 1);
             metrics.incrementRequests("logout", result ? "success" : "failed");
 
@@ -74,6 +88,11 @@ public class AuthService {
     public List<String> generatePasswordSuggestions(int quantity) throws Exception {
 
         return metrics.record("password_suggestions", () -> {
+
+            if (quantity <= 0) {
+                metrics.incrementRequests("password_suggestions", "failed");
+                throw new RuntimeException("quantity must to be higher than zero");
+            }
 
             var suggestionWorkers = new ArrayList<PasswordSuggestionWorker>(quantity);
 
