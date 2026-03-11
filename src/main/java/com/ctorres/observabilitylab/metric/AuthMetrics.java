@@ -28,7 +28,7 @@ public class AuthMetrics {
     public <T> T record(String endpoint, Callable<T> callable) throws Exception {
 
         Timer timer = Timer.builder("auth_duration_seconds")
-                .description("Duration of work endpoints")
+                .description("Duration of auth endpoints")
                 .tag("endpoint", endpoint)
                 .publishPercentileHistogram()
                 .register(registry);
@@ -41,6 +41,7 @@ public class AuthMetrics {
     }
 
     public void deleteLoggedUser() {
+        if (loggedUsers.get() == 0) throw new RuntimeException("there are no logged users");
         loggedUsers.getAndDecrement();
     }
 }
