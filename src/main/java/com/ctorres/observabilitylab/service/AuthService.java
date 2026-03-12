@@ -68,7 +68,7 @@ public class AuthService {
 
             if (username == null) {
                 metrics.incrementRequests("logout", "failed");
-                return "username required";
+                throw new RuntimeException("username required");
             }
 
             boolean result = getArbitraryResult(username, 1);
