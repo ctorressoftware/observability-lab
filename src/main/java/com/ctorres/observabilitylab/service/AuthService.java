@@ -34,15 +34,11 @@ public class AuthService {
                 throw new RuntimeException("user and password are required");
             }
 
-            try {
-                boolean result = getArbitraryResult(request, 3);
-                metrics.incrementRequests("register", result ? "success" : "failed");
-                if (!result) throw new RuntimeException("register controlled error");
-                return "user registered correctly.";
-            } catch (Exception e) {
-                metrics.incrementRequests("register", "failed");
-                throw e;
-            }
+            boolean result = getArbitraryResult(request, 3);
+            metrics.incrementRequests("register", result ? "success" : "failed");
+            if (!result) throw new RuntimeException("register controlled error");
+            return "user registered correctly.";
+
         });
     }
 
@@ -63,7 +59,7 @@ public class AuthService {
             if (!result) throw new RuntimeException("login controlled error");
             metrics.addLoggedUser();
 
-            return  "login succeeded";
+            return "login succeeded";
         });
     }
 
@@ -81,7 +77,7 @@ public class AuthService {
             if (!result) throw new RuntimeException("logout controlled error");
             metrics.deleteLoggedUser();
 
-            return  "logout succeeded";
+            return "logout succeeded";
         });
     }
 
