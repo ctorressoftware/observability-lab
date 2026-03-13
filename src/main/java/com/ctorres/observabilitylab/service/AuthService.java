@@ -12,11 +12,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 @Service
 public class AuthService {
     private final Random random;
     private final AuthMetrics metrics;
+    private static final Logger LOGGER = Logger.getLogger(AuthService.class.getName());
 
     public AuthService(Random random, AuthMetrics metrics) {
         this.random = random;
@@ -116,6 +118,7 @@ public class AuthService {
 
     private boolean getArbitraryResult(Object object, long seconds) {
         try {
+            LOGGER.info("Processed object: " + object);
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
