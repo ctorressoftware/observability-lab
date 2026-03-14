@@ -119,10 +119,11 @@ public class AuthService {
     private boolean getArbitraryResult(Object object, long seconds) {
         try {
             LOGGER.info("Processed object: " + object);
+
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return random.nextFloat() < 0.5;
+        return random.nextFloat() < 0.5; // 50% OK - 50% Throw an RuntimeException
     }
 }
