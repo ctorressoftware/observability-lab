@@ -39,7 +39,7 @@ public class AuthService {
                 throw new RequestValidationException("user and password are required");
             }
 
-            boolean result = getArbitraryResult(request, 3);
+            boolean result = simulateAuthProcessing(request, 3);
             metrics.incrementRequests("register", result ? "success" : "failed");
             if (!result) throw new ControlledErrorException("register controlled error");
             return "user registered correctly.";
@@ -57,7 +57,7 @@ public class AuthService {
                 throw new RequestValidationException("user and password are required");
             }
 
-            boolean result = getArbitraryResult(request, 2);
+            boolean result = simulateAuthProcessing(request, 2);
             metrics.incrementRequests("login", result ? "success" : "failed");
 
             if (!result) throw new ControlledErrorException("login controlled error");
@@ -75,7 +75,7 @@ public class AuthService {
                 throw new RequestValidationException("username required");
             }
 
-            boolean result = getArbitraryResult(username, 1);
+            boolean result = simulateAuthProcessing(username, 1);
             metrics.incrementRequests("logout", result ? "success" : "failed");
 
             if (!result) throw new ControlledErrorException("logout controlled error");
@@ -118,7 +118,7 @@ public class AuthService {
         });
     }
 
-    private boolean getArbitraryResult(Object object, long seconds) {
+    private boolean simulateAuthProcessing(Object object, long seconds) {
         try {
             LOGGER.info("Processed object: " + object);
             Thread.sleep(seconds * 1000);
