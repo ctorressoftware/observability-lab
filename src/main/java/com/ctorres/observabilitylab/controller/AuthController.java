@@ -2,7 +2,9 @@ package com.ctorres.observabilitylab.controller;
 
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
+import com.ctorres.observabilitylab.dto.Result;
 import com.ctorres.observabilitylab.service.AuthService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,22 +19,22 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody RegisterRequest request) throws Exception {
-        return service.register(request);
+    public ResponseEntity<Result<String>> register(@RequestBody RegisterRequest request) throws Exception {
+        return ResponseEntity.ok(Result.success(service.register(request)));
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest request) throws Exception {
-        return service.login(request);
+    public ResponseEntity<Result<String>> login(@RequestBody LoginRequest request) throws Exception {
+        return ResponseEntity.ok(Result.success(service.login(request)));
     }
 
     @PostMapping("/logout")
-    public String logout(@RequestBody String username) throws Exception {
-        return service.logout(username);
+    public ResponseEntity<Result<String>> logout(@RequestBody String username) throws Exception {
+        return ResponseEntity.ok(Result.success(service.logout(username)));
     }
 
     @GetMapping("/password/suggestions")
-    public List<String> generateSuggestions(@RequestParam int quantity) throws Exception {
-        return service.generatePasswordSuggestions(quantity);
+    public ResponseEntity<Result<List<String>>> generateSuggestions(@RequestParam int quantity) throws Exception {
+        return ResponseEntity.ok(Result.success(service.generatePasswordSuggestions(quantity)));
     }
 }
