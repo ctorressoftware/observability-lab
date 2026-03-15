@@ -1,5 +1,6 @@
 package com.ctorres.observabilitylab.metric;
 
+import com.ctorres.observabilitylab.exception.ControlledErrorException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class AuthMetrics {
     }
 
     public void deleteLoggedUser() {
-        if (loggedUsers.get() == 0) throw new RuntimeException("there are no logged users");
+        if (loggedUsers.get() == 0) throw new ControlledErrorException("there are no logged users");
         loggedUsers.getAndDecrement();
     }
 }
