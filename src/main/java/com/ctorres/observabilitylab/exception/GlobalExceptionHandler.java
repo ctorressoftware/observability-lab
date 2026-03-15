@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.concurrent.ExecutionException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,5 +26,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Result<String>> handleInterruptedThreadException(InterruptedThreadException ex) {
         return ResponseEntity.internalServerError()
                 .body(Result.error(CodeError.INTERRUPTED_THREAD.name(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(ExecutionThreadException.class)
+    public ResponseEntity<Result<String>> handleExecutionThreadException(ExecutionException ex) {
+        return ResponseEntity.internalServerError()
+                .body(Result.error(CodeError.EXECUTION_THREAD.name(), ex.getMessage()));
     }
 }

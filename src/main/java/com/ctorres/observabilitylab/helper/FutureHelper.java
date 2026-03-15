@@ -1,5 +1,7 @@
 package com.ctorres.observabilitylab.helper;
 
+import com.ctorres.observabilitylab.exception.InterruptedThreadException;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -9,7 +11,7 @@ public class FutureHelper<T> {
             return future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new InterruptedThreadException(e);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
