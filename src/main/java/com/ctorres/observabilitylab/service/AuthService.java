@@ -1,5 +1,6 @@
 package com.ctorres.observabilitylab.service;
 
+import com.ctorres.observabilitylab.dto.BurstRequest;
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
 import com.ctorres.observabilitylab.exception.ControlledErrorException;
@@ -8,11 +9,13 @@ import com.ctorres.observabilitylab.exception.RequestValidationException;
 import com.ctorres.observabilitylab.helper.FutureHelper;
 import com.ctorres.observabilitylab.metric.AuthMetrics;
 import com.ctorres.observabilitylab.service.password_generator.PasswordSuggestionWorker;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -116,6 +119,48 @@ public class AuthService {
                 throw new InterruptedThreadException(e);
             }
         });
+    }
+
+    public String burst(BurstRequest request) throws Exception {
+        return metrics.record("burst", () -> {
+
+            if (request == null) {
+                metrics.incrementRequests("burst", "failed");
+                throw new RequestValidationException("valid endpoint is required");
+            }
+
+            if (request.endpoint().isBlank() || request.times() == 0 || request.parallelism() == 0) {
+                metrics.incrementRequests("burst", "failed");
+                throw new RequestValidationException();
+            }
+
+            try (var executor = Executors.newFixedThreadPool(request.parallelism())) {
+                var callables = getCallables(request.endpoint(), request.times());
+                var futures = executor.invokeAll(callables);
+                var responses = futures.stream()
+                        .map(FutureHelper::getCheckedException)
+                        .toList();
+                boolean result = responses.size() == request.times();
+                metrics.incrementRequests("burst", result ? "success" : "failed");
+
+                if (!result) throw new ControlledErrorException("burst controlled error");
+                return request.times() + " tasks completed successfully";
+            }
+        });
+    }
+
+    private @NonNull ArrayList<Callable<String>> getCallables(String endpoint, int times) {
+        var callables = new ArrayList<Callable<String>>();
+        for (int i = 0; i < times; i++) {
+            callables.add(() -> switch (endpoint) {
+                case "register" -> register(new RegisterRequest("admin", "password"));
+                case "login" -> login(new LoginRequest("admin", "password"));
+                case "logout" -> logout("admin");
+                case "password_suggestions" -> generatePasswordSuggestions(10).getFirst();
+                default -> null;
+            });
+        }
+        return callables;
     }
 
     private boolean simulateAuthProcessing(Object object, long seconds) {

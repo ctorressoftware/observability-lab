@@ -1,5 +1,6 @@
 package com.ctorres.observabilitylab.controller;
 
+import com.ctorres.observabilitylab.dto.BurstRequest;
 import com.ctorres.observabilitylab.dto.LoginRequest;
 import com.ctorres.observabilitylab.dto.RegisterRequest;
 import com.ctorres.observabilitylab.dto.Result;
@@ -36,5 +37,10 @@ public class AuthController {
     @GetMapping("/password/suggestions")
     public ResponseEntity<Result<List<String>>> generateSuggestions(@RequestParam int quantity) throws Exception {
         return ResponseEntity.ok(Result.success(service.generatePasswordSuggestions(quantity)));
+    }
+
+    @PostMapping("/burst")
+    public ResponseEntity<Result<String>> burst(@RequestBody BurstRequest request) throws Exception {
+        return ResponseEntity.ok(Result.success(service.burst(request)));
     }
 }
