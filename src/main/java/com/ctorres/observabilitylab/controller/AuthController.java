@@ -40,4 +40,11 @@ public class AuthController {
     public ResponseEntity<Result<String>> burst(@RequestBody BurstRequest request) throws Exception {
         return ResponseEntity.ok(Result.success(service.burst(request)));
     }
+
+    @PostMapping("/simulate")
+    // TODO: implement user's behavior simulation
+    public ResponseEntity<Result<String>> simulateUserBehavior(
+            @RequestBody SimulateUserBehaviorRequest request) throws Exception {
+        return ResponseEntity.ok(Result.success(null));
+    }
 }

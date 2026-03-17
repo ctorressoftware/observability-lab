@@ -167,6 +167,37 @@ public class AuthService {
         return callables;
     }
 
+    private void simulateUserBehavior(SimulateUserBehaviorRequest request) {
+
+        // TODO: implement user's behavior simulation
+        try (var executor = Executors.newFixedThreadPool(request.parallelism())) {
+
+        }
+
+    }
+
+    private @NonNull ArrayList<Callable<String>> getBehaviorCallable(int times) {
+        var callables = new ArrayList<Callable<String>>();
+        for (int i = 0; i < times; i++) {
+            final int index = i;
+            callables.add(() -> {
+
+
+                return "";
+            });
+        }
+        return callables;
+    }
+
+    private void userBehavior(int index) throws Exception {
+        List<String> suggestions = generatePasswordSuggestions(random.nextInt(20));
+
+        String user = "user_" + index;
+        String password = suggestions.get(random.nextInt(20));
+
+        register(new RegisterRequest(user, password ));
+    }
+
     private boolean simulateAuthProcessing(Object object, long seconds) {
         try {
             LOGGER.info("Processed object: " + object);
