@@ -171,6 +171,6 @@ public class AuthService {
             Thread.currentThread().interrupt();
             throw new InterruptedThreadException(e);
         }
-        return random.nextFloat() < 0.5; // 50% OK - 50% Throw an RuntimeException
+        return random.nextFloat() < 0.9; // 90% OK - 10% Throw an RuntimeException
     }
 }
