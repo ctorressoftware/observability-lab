@@ -1,9 +1,6 @@
 package com.ctorres.observabilitylab.controller;
 
-import com.ctorres.observabilitylab.dto.BurstRequest;
-import com.ctorres.observabilitylab.dto.LoginRequest;
-import com.ctorres.observabilitylab.dto.RegisterRequest;
-import com.ctorres.observabilitylab.dto.Result;
+import com.ctorres.observabilitylab.dto.*;
 import com.ctorres.observabilitylab.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +17,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Result<String>> register(@RequestBody RegisterRequest request) throws Exception {
+    public ResponseEntity<Result<RegisterResponse>> register(@RequestBody RegisterRequest request) throws Exception {
         return ResponseEntity.ok(Result.success(service.register(request)));
     }
 
