@@ -1,8 +1,6 @@
 package com.ctorres.observabilitylab.service;
 
-import com.ctorres.observabilitylab.dto.BurstRequest;
-import com.ctorres.observabilitylab.dto.LoginRequest;
-import com.ctorres.observabilitylab.dto.RegisterRequest;
+import com.ctorres.observabilitylab.dto.*;
 import com.ctorres.observabilitylab.exception.ControlledErrorException;
 import com.ctorres.observabilitylab.exception.InterruptedThreadException;
 import com.ctorres.observabilitylab.exception.RequestValidationException;
@@ -31,7 +29,7 @@ public class AuthService {
         this.metrics = metrics;
     }
 
-    public String register(RegisterRequest request) throws Exception {
+    public RegisterResponse register(RegisterRequest request) throws Exception {
         return metrics.record("register", () -> {
             if (request == null) {
                 metrics.incrementRequests("register", "failed");
@@ -42,10 +40,16 @@ public class AuthService {
                 throw new RequestValidationException("user and password are required");
             }
 
-            boolean result = simulateAuthProcessing(request, 3);
+            boolean result = simulateAuthProcessing(request, random.nextInt(5));
             metrics.incrementRequests("register", result ? "success" : "failed");
             if (!result) throw new ControlledErrorException("register controlled error");
-            return "user registered correctly.";
+
+            return new RegisterResponse(
+                    "USER_REGISTERED_SUCCESSFULLY",
+                    "user registered correctly.",
+                    request.user(),
+                    request.password(),
+                    true);
         });
     }
 
