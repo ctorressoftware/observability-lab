@@ -45,15 +45,14 @@ public class AuthService {
             if (!result) throw new ControlledErrorException("register controlled error");
 
             return new RegisterResponse(
-                    "USER_REGISTERED_SUCCESSFULLY",
+                    "USER_REGISTERED",
                     "user registered correctly.",
                     request.user(),
-                    request.password(),
                     true);
         });
     }
 
-    public String login(LoginRequest request) throws Exception {
+    public LoginResponse login(LoginRequest request) throws Exception {
         return metrics.record("login", () -> {
             if (request == null) {
                 metrics.incrementRequests("login", "failed");
@@ -70,11 +69,16 @@ public class AuthService {
             if (!result) throw new ControlledErrorException("login controlled error");
             metrics.addLoggedUser();
 
-            return "login succeeded";
+            return new LoginResponse(
+                    "USER_LOGGED",
+                    "login succeeded",
+                    request.user(),
+                    true
+            );
         });
     }
 
-    public String logout(String username) throws Exception {
+    public LogoutResponse logout(String username) throws Exception {
         return metrics.record("logout", () -> {
 
             if (username == null) {
@@ -88,7 +92,10 @@ public class AuthService {
             if (!result) throw new ControlledErrorException("logout controlled error");
             metrics.deleteLoggedUser();
 
-            return "logout succeeded";
+            return new LogoutResponse(
+                    "USED_LOGGED_OUT",
+                    username + " logged out successfully"
+            );
         });
     }
 
@@ -153,11 +160,10 @@ public class AuthService {
         });
     }
 
-    private @NonNull ArrayList<Callable<String>> getCallables(String endpoint, int times) {
-        var callables = new ArrayList<Callable<String>>();
+    private @NonNull ArrayList<Callable<Object>> getCallables(String endpoint, int times) {
+        var callables = new ArrayList<Callable<Object>>();
         for (int i = 0; i < times; i++) {
             callables.add(() -> switch (endpoint) {
-                // TODO: Fix type error
                 case "register" -> register(new RegisterRequest("admin", "password"));
                 case "login" -> login(new LoginRequest("admin", "password"));
                 case "logout" -> logout("admin");

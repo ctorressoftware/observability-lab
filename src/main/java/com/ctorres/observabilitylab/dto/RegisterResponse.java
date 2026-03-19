@@ -1,3 +1,3 @@
 package com.ctorres.observabilitylab.dto;
 
-public record RegisterResponse(String code, String message, String user, String password, boolean active) {}
+public record RegisterResponse(String code, String message, String user, boolean active) {}

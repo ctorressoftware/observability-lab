@@ -22,12 +22,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Result<String>> login(@RequestBody LoginRequest request) throws Exception {
+    public ResponseEntity<Result<LoginResponse>> login(@RequestBody LoginRequest request) throws Exception {
         return ResponseEntity.ok(Result.success(service.login(request)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Result<String>> logout(@RequestBody String username) throws Exception {
+    public ResponseEntity<Result<LogoutResponse>> logout(@RequestBody String username) throws Exception {
         return ResponseEntity.ok(Result.success(service.logout(username)));
     }
 
