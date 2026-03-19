@@ -157,6 +157,7 @@ public class AuthService {
         var callables = new ArrayList<Callable<String>>();
         for (int i = 0; i < times; i++) {
             callables.add(() -> switch (endpoint) {
+                // TODO: Fix type error
                 case "register" -> register(new RegisterRequest("admin", "password"));
                 case "login" -> login(new LoginRequest("admin", "password"));
                 case "logout" -> logout("admin");
