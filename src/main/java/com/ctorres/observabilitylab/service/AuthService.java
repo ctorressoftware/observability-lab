@@ -13,10 +13,12 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -99,7 +101,7 @@ public class AuthService {
         });
     }
 
-    public List<String> generatePasswordSuggestions(int quantity) throws Exception {
+    public SuggestionsResponse generatePasswordSuggestions(int quantity) throws Exception {
 
         return metrics.record("password_suggestions", () -> {
 
@@ -116,14 +118,17 @@ public class AuthService {
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
                 var futures = executor.invokeAll(suggestionWorkers);
-                List<String> suggestions = futures.stream()
+                Set<String> suggestions = futures.stream()
                         .map(FutureHelper::getCheckedException)
-                        .toList();
+                        .collect(Collectors.toSet());
 
                 boolean isGenerated = suggestions.size() == quantity;
                 metrics.incrementRequests("password_suggestions", isGenerated ? "success" : "failed");
 
-                return suggestions;
+                return new SuggestionsResponse(
+                        "PASSWORD_SUGGESTIONS_GENERATED",
+                        suggestions
+                );
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -132,7 +137,7 @@ public class AuthService {
         });
     }
 
-    public String burst(BurstRequest request) throws Exception {
+    public BurstResponse burst(BurstRequest request) throws Exception {
         return metrics.record("burst", () -> {
 
             if (request == null) {
@@ -155,7 +160,10 @@ public class AuthService {
                 metrics.incrementRequests("burst", result ? "success" : "failed");
 
                 if (!result) throw new ControlledErrorException("burst controlled error");
-                return request.times() + " tasks completed successfully";
+                return new BurstResponse(
+                        "TASKS_COMPLETED",
+                        request.times() + " tasks completed successfully"
+                );
             }
         });
     }
@@ -167,7 +175,7 @@ public class AuthService {
                 case "register" -> register(new RegisterRequest("admin", "password"));
                 case "login" -> login(new LoginRequest("admin", "password"));
                 case "logout" -> logout("admin");
-                case "password_suggestions" -> generatePasswordSuggestions(10).getFirst();
+                case "password_suggestions" -> generatePasswordSuggestions(10);
                 default -> null;
             });
         }
@@ -197,10 +205,10 @@ public class AuthService {
     }
 
     private void userBehavior(int index) throws Exception {
-        List<String> suggestions = generatePasswordSuggestions(random.nextInt(20));
+        Set<String> suggestions = generatePasswordSuggestions(random.nextInt(20)).suggestions();
 
         String user = "user_" + index;
-        String password = suggestions.get(random.nextInt(20));
+        String password = "example_password"; //suggestions.(random.nextInt(20));
 
         register(new RegisterRequest(user, password ));
     }

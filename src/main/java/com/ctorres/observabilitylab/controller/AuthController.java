@@ -32,12 +32,12 @@ public class AuthController {
     }
 
     @GetMapping("/password/suggestions")
-    public ResponseEntity<Result<List<String>>> generateSuggestions(@RequestParam int quantity) throws Exception {
+    public ResponseEntity<Result<SuggestionsResponse>> generateSuggestions(@RequestParam int quantity) throws Exception {
         return ResponseEntity.ok(Result.success(service.generatePasswordSuggestions(quantity)));
     }
 
     @PostMapping("/burst")
-    public ResponseEntity<Result<String>> burst(@RequestBody BurstRequest request) throws Exception {
+    public ResponseEntity<Result<BurstResponse>> burst(@RequestBody BurstRequest request) throws Exception {
         return ResponseEntity.ok(Result.success(service.burst(request)));
     }
 
