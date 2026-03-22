@@ -11,7 +11,6 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -182,35 +181,92 @@ public class AuthService {
         return callables;
     }
 
-    private void simulateUserBehavior(SimulateUserBehaviorRequest request) {
-
-        // TODO: implement user's behavior simulation
+    public SimulateUserBehaviorResponse simulateUserBehavior(SimulateUserBehaviorRequest request) throws Exception {
+        var response = new SimulateUserBehaviorResponse();
         try (var executor = Executors.newFixedThreadPool(request.parallelism())) {
+            var callables = getBehaviorCallable(request.times());
+            var futures = executor.invokeAll(callables);
+            var responses = futures.stream()
+                    .map(FutureHelper::getCheckedException)
+                    .toList();
 
+            for (IndividualBehavior userBehavior : responses) {
+                int actualTotalErrors = response.getTotalErrors();
+                int actualTotalRetries = response.getTotalRetries();
+
+                if (userBehavior.getErrors() == 0) {
+                    response.incrementSuccessfulUserProcess();
+                }
+
+                response.setTotalErrors(actualTotalErrors + userBehavior.getErrors());
+                response.setTotalRetries(actualTotalRetries + userBehavior.getRetries());
+            }
+            return response;
         }
-
     }
 
-    private @NonNull ArrayList<Callable<String>> getBehaviorCallable(int times) {
-        var callables = new ArrayList<Callable<String>>();
+    private @NonNull ArrayList<Callable<IndividualBehavior>> getBehaviorCallable(int times) {
+        var callables = new ArrayList<Callable<IndividualBehavior>>();
         for (int i = 0; i < times; i++) {
             final int index = i;
-            callables.add(() -> {
-
-
-                return "";
-            });
+            callables.add(() -> userBehavior(index));
         }
         return callables;
     }
 
-    private void userBehavior(int index) throws Exception {
-        Set<String> suggestions = generatePasswordSuggestions(random.nextInt(20)).suggestions();
+    private IndividualBehavior userBehavior(int index) throws Exception {
+        var individualBehavior = new IndividualBehavior();
+        var suggestionsResponse = generatePasswordSuggestions(random.nextInt(20));
+
+        if (suggestionsResponse == null || suggestionsResponse.suggestions() == null) {
+            individualBehavior.incrementErrors();
+            throw new RuntimeException("An error occurred with the password suggestions generation.");
+        }
+
+        if (suggestionsResponse.suggestions().isEmpty()) {
+            individualBehavior.incrementErrors();
+            throw new RuntimeException("No password suggestions generated.");
+        }
 
         String user = "user_" + index;
-        String password = "example_password"; //suggestions.(random.nextInt(20));
+        String password = suggestionsResponse.suggestions().stream()
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("No password suggestions generated."));
 
-        register(new RegisterRequest(user, password ));
+        var registerResponse = register(new RegisterRequest(user, password));
+
+        if (registerResponse == null) {
+            individualBehavior.incrementErrors();
+            throw new RuntimeException("An error occurred with the registration of the user = " + user);
+        }
+
+        var loginResponse = login(new LoginRequest(registerResponse.user(), password));
+
+        if (loginResponse == null) {
+            individualBehavior.incrementErrors();
+            throw new RuntimeException("An error occurred with the login of the user = " + registerResponse.user());
+        }
+
+        if (!loginResponse.active()) {
+            throw new RuntimeException("The user = " + registerResponse.user() + " is inactive");
+        }
+
+        var successUserAction = simulateAuthProcessing(new Object(), random.nextInt(10));
+
+        while (!successUserAction) {
+            individualBehavior.incrementErrors();
+            individualBehavior.incrementRetries();
+            successUserAction = simulateAuthProcessing(new Object(), random.nextInt(10));
+        }
+
+        var logoutResponse = logout(loginResponse.user());
+
+        if (logoutResponse == null) {
+            individualBehavior.incrementErrors();
+            throw new RuntimeException("An error occurred with the logout of the user = " + loginResponse.user());
+        }
+
+        return individualBehavior;
     }
 
     private boolean simulateAuthProcessing(Object object, long seconds) {

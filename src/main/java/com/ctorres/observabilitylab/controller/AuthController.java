@@ -5,8 +5,6 @@ import com.ctorres.observabilitylab.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -42,9 +40,8 @@ public class AuthController {
     }
 
     @PostMapping("/simulate")
-    // TODO: implement user's behavior simulation
-    public ResponseEntity<Result<String>> simulateUserBehavior(
+    public ResponseEntity<Result<SimulateUserBehaviorResponse>> simulateUserBehavior(
             @RequestBody SimulateUserBehaviorRequest request) throws Exception {
-        return ResponseEntity.ok(Result.success(null));
+        return ResponseEntity.ok(Result.success(service.simulateUserBehavior(request)));
     }
 }
