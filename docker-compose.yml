@@ -16,11 +16,11 @@ services:
       - prometheus
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.9.0
     container_name: tempo
-    command: [ "-config.file=/etc/tempo.yaml" ]
+    command: [ "-config.file=/etc/tempo.yml" ]
     volumes:
-      - ./tempo.yaml:/etc/tempo.yaml:ro
+      - ./tempo.yml:/etc/tempo.yml:ro
     ports:
       - "3200:3200"
       - "4317:4317"
