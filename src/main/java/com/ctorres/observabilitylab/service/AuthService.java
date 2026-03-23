@@ -25,6 +25,7 @@ public class AuthService {
     private final Random random;
     private final AuthMetrics metrics;
     private final AuthTracing tracing;
+    private final int MAX_RETRY = 3;
     private static final Logger LOGGER = Logger.getLogger(AuthService.class.getName());
 
     public AuthService(Random random, AuthMetrics metrics, AuthTracing tracing) {
@@ -281,7 +282,9 @@ public class AuthService {
                     () -> simulateAuthProcessing(new Object(), random.nextInt(10))
             );
 
-            while (!successUserAction) {
+            int attempts = 0;
+
+            while (!successUserAction && attempts < MAX_RETRY) {
                 individualBehavior.incrementErrors();
                 individualBehavior.incrementRetries();
                 successUserAction = tracing.inSpan(
@@ -289,6 +292,7 @@ public class AuthService {
                         "doTask",
                         () -> simulateAuthProcessing(new Object(), random.nextInt(10))
                 );
+                attempts++;
             }
 
             var logoutResponse = tracing.inSpan(
