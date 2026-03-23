@@ -1,4 +1,4 @@
-package com.ctorres.observabilitylab.metric;
+package com.ctorres.observabilitylab.observability;
 
 import com.ctorres.observabilitylab.exception.ControlledErrorException;
 import io.micrometer.core.instrument.MeterRegistry;
