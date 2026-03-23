@@ -5,7 +5,8 @@ import com.ctorres.observabilitylab.exception.ControlledErrorException;
 import com.ctorres.observabilitylab.exception.InterruptedThreadException;
 import com.ctorres.observabilitylab.exception.RequestValidationException;
 import com.ctorres.observabilitylab.helper.FutureHelper;
-import com.ctorres.observabilitylab.metric.AuthMetrics;
+import com.ctorres.observabilitylab.observability.AuthMetrics;
+import com.ctorres.observabilitylab.observability.AuthTracing;
 import com.ctorres.observabilitylab.service.password_generator.PasswordSuggestionWorker;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,13 @@ import java.util.stream.Collectors;
 public class AuthService {
     private final Random random;
     private final AuthMetrics metrics;
+    private final AuthTracing tracing;
     private static final Logger LOGGER = Logger.getLogger(AuthService.class.getName());
 
-    public AuthService(Random random, AuthMetrics metrics) {
+    public AuthService(Random random, AuthMetrics metrics, AuthTracing tracing) {
         this.random = random;
         this.metrics = metrics;
+        this.tracing = tracing;
     }
 
     public RegisterResponse register(RegisterRequest request) throws Exception {
@@ -182,6 +185,13 @@ public class AuthService {
     }
 
     public SimulateUserBehaviorResponse simulateUserBehavior(SimulateUserBehaviorRequest request) throws Exception {
+        return tracing.inSpan("auth.simulate-user-behavior", "simulate-user-behavior", () ->
+                doSimulateUserBehavior(request)
+        );
+    }
+
+    private SimulateUserBehaviorResponse doSimulateUserBehavior(
+            SimulateUserBehaviorRequest request) throws InterruptedException {
         var response = new SimulateUserBehaviorResponse();
         try (var executor = Executors.newFixedThreadPool(request.parallelism())) {
             var callables = getBehaviorCallable(request.times());
@@ -215,58 +225,85 @@ public class AuthService {
     }
 
     private IndividualBehavior userBehavior(int index) throws Exception {
-        var individualBehavior = new IndividualBehavior();
-        var suggestionsResponse = generatePasswordSuggestions(random.nextInt(20));
 
-        if (suggestionsResponse == null || suggestionsResponse.suggestions() == null) {
-            individualBehavior.incrementErrors();
-            throw new RuntimeException("An error occurred with the password suggestions generation.");
-        }
+        return tracing.inSpan("auth.user-flow", "user-flow", () -> {
+            var individualBehavior = new IndividualBehavior();
+            var suggestionsResponse = tracing.inSpan(
+                    "auth.password-suggestions",
+                    "password-suggestions",
+                    () -> generatePasswordSuggestions(random.nextInt(5))
+            );
 
-        if (suggestionsResponse.suggestions().isEmpty()) {
-            individualBehavior.incrementErrors();
-            throw new RuntimeException("No password suggestions generated.");
-        }
+            if (suggestionsResponse == null || suggestionsResponse.suggestions() == null) {
+                individualBehavior.incrementErrors();
+                throw new RuntimeException("An error occurred with the password suggestions generation.");
+            }
 
-        String user = "user_" + index;
-        String password = suggestionsResponse.suggestions().stream()
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("No password suggestions generated."));
+            if (suggestionsResponse.suggestions().isEmpty()) {
+                individualBehavior.incrementErrors();
+                throw new RuntimeException("No password suggestions generated.");
+            }
 
-        var registerResponse = register(new RegisterRequest(user, password));
+            String user = "user_" + index;
+            String password = suggestionsResponse.suggestions().stream()
+                    .findAny()
+                    .orElseThrow(() -> new RuntimeException("No password suggestions generated."));
 
-        if (registerResponse == null) {
-            individualBehavior.incrementErrors();
-            throw new RuntimeException("An error occurred with the registration of the user = " + user);
-        }
+            var registerResponse = tracing.inSpan(
+                    "auth.register",
+                    "register",
+                    () -> register(new RegisterRequest(user, password))
+            );
 
-        var loginResponse = login(new LoginRequest(registerResponse.user(), password));
+            if (registerResponse == null) {
+                individualBehavior.incrementErrors();
+                throw new RuntimeException("An error occurred with the registration of the user = " + user);
+            }
 
-        if (loginResponse == null) {
-            individualBehavior.incrementErrors();
-            throw new RuntimeException("An error occurred with the login of the user = " + registerResponse.user());
-        }
+            var loginResponse = tracing.inSpan(
+                    "auth.login",
+                    "login",
+                    () -> login(new LoginRequest(registerResponse.user(), password))
+            );
 
-        if (!loginResponse.active()) {
-            throw new RuntimeException("The user = " + registerResponse.user() + " is inactive");
-        }
+            if (loginResponse == null) {
+                individualBehavior.incrementErrors();
+                throw new RuntimeException("An error occurred with the login of the user = " + registerResponse.user());
+            }
 
-        var successUserAction = simulateAuthProcessing(new Object(), random.nextInt(10));
+            if (!loginResponse.active()) {
+                throw new RuntimeException("The user = " + registerResponse.user() + " is inactive");
+            }
 
-        while (!successUserAction) {
-            individualBehavior.incrementErrors();
-            individualBehavior.incrementRetries();
-            successUserAction = simulateAuthProcessing(new Object(), random.nextInt(10));
-        }
+            var successUserAction = tracing.inSpan(
+                    "auth.doTask",
+                    "doTask",
+                    () -> simulateAuthProcessing(new Object(), random.nextInt(10))
+            );
 
-        var logoutResponse = logout(loginResponse.user());
+            while (!successUserAction) {
+                individualBehavior.incrementErrors();
+                individualBehavior.incrementRetries();
+                successUserAction = tracing.inSpan(
+                        "auth.doTask.retry",
+                        "doTask",
+                        () -> simulateAuthProcessing(new Object(), random.nextInt(10))
+                );
+            }
 
-        if (logoutResponse == null) {
-            individualBehavior.incrementErrors();
-            throw new RuntimeException("An error occurred with the logout of the user = " + loginResponse.user());
-        }
+            var logoutResponse = tracing.inSpan(
+                    "auth.logout",
+                    "logout",
+                    () -> logout(loginResponse.user())
+            );
 
-        return individualBehavior;
+            if (logoutResponse == null) {
+                individualBehavior.incrementErrors();
+                throw new RuntimeException("An error occurred with the logout of the user = " + loginResponse.user());
+            }
+
+            return individualBehavior;
+        });
     }
 
     private boolean simulateAuthProcessing(Object object, long seconds) {
